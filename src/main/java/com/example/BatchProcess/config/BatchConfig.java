@@ -13,11 +13,11 @@ import org.springframework.batch.core.configuration.annotation.EnableBatchProces
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
-import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.database.builder.JdbcBatchItemWriterBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DuplicateKeyException;
@@ -36,7 +36,10 @@ public class BatchConfig {
     private DataSourceTransactionManager transactionManager;
     @Autowired
     private DataSource dataSource;
-
+    @Autowired
+    private ValidUser validUser;
+    @Value("${SpringBatchChunkSize}")
+    private int chunkSize;
     
     public  Job  jobBean(){
         System.out.println("job bean creation");
@@ -49,14 +52,14 @@ public class BatchConfig {
     
     public Step steps(List<User>users){
         return new StepBuilder("jobStep", jobRepository)
-        .<User,User>chunk(5000,transactionManager)
+        .<User,User>chunk(chunkSize,transactionManager)
         .reader(userReader(users))
-        .processor(itemProcessor())
+        .processor(validUser)
         .writer(itemWriter())
         .faultTolerant()
-        .skip(InvalidObjectException.class)
         .skip(DuplicateKeyException.class)
-        .skipLimit(100000)
+        .skip(InvalidObjectException.class)
+        .skipLimit(1000)
         .build();
     }
 
@@ -64,14 +67,15 @@ public class BatchConfig {
 
     //reader
     // @Bean
-    public ItemReader<User> userReader(List<User> users){        
+    public ItemReader<User> userReader(List<User> users){      
+        System.out.println("reader is triggered.....");  
         return new UserCustomReader(users);
     }
 
     // @Bean
-    public ItemProcessor<User,User> itemProcessor(){
-        return new ValidUser();
-    }
+    // public ItemProcessor<User,User> itemProcessor(){
+    //     return new ValidUser();
+    // }
     
 
     @Bean

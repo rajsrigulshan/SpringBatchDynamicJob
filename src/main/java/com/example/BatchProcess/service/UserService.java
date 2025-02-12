@@ -32,6 +32,8 @@ public class UserService {
     @PostMapping("/saveUsers")
     public ResponseEntity<String> saveUserDetails(@RequestBody List<User> users)
             throws JobRestartException, JobParametersInvalidException, JobInstanceAlreadyCompleteException {
+        // List<User> uniqueUsers=removeDupicates(users);
+
         try {
             Step steps= batchConfig.steps(users);
             Job job=new JobBuilder("Dynamic Job",batchConfig.jobRepository)
