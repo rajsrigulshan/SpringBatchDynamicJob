@@ -30,9 +30,6 @@ public class UserCustomReader  implements ItemReader<User>{
         this.userHelper=userHelper;
         this.chunkSize=chunkSize;
     }
-
-
-    
     
     int index=0;
     Queue<User> validUsersData;
@@ -44,74 +41,23 @@ public class UserCustomReader  implements ItemReader<User>{
 
     @Override
     public User read(){
-        System.out.println("chunkSize is --------------------"+chunkSize+"------------------");
-        if(validUsersData.isEmpty()){
-            List<User> currentChunk=new ArrayList<>();
-            int itemReadInCurrentChunk=0;
-            while(index<users.size() && itemReadInCurrentChunk<chunkSize){
-                currentChunk.add(users.get(index++));
-                itemReadInCurrentChunk++;
+        while(index<users.size() && validUsersData.isEmpty()){
+
+            if(validUsersData.isEmpty()){
+                List<User> currentChunk=new ArrayList<>();
+                int itemReadInCurrentChunk=0;
+                while(index<users.size() && itemReadInCurrentChunk<chunkSize){
+                    currentChunk.add(users.get(index++));
+                    itemReadInCurrentChunk++;
+                }
+              
+            //validation against database
+            validUsersData.addAll(userHelper.validateChunkAgainstDatabase(currentChunk));    
             }
-            if(currentChunk.isEmpty())
-                return null;
+                
+        }
         
-
-
-        //validation against database  needs to be complete....
-        validUsersData.addAll(userHelper.validateChunkAgainstDatabase(currentChunk));
-        for (User user : validUsersData) {
-            System.out.println(user.toString());
-        }
-            
-        }
         return validUsersData.poll();
-        // return null; // just to check......and not save in the database
     }    
     
 }
-
-
-
-
-    // private List<User> users;
-    // private int index = 0;
-    // private Queue<User> usrs=new LinkedList<>();
-    
-
-    // public UserCustomReader(List<User> users) {
-    //     this.users = users;
-    //     logger.info("INFO: total number of users: {}",users.size());
-    // }
-
-    // @Override
-    // public User read() throws Exception{
-    //     if (index < users.size()) {
-    //         return users.get(index++);
-    //     }
-    //     return null;
-    // }
-
-
-/*
-  @Override
-    public DataItem read() throws Exception {
-        if (validItemsQueue.isEmpty()) {
-            List<DataItem> currentChunk = new ArrayList<>();
-            int itemsReadInChunk = 0;
-            while (index < data.length && itemsReadInChunk < chunkSize) {
-                String key = data[index++];
-                String value = data[index++]; // Assuming key-value pairs
-                currentChunk.add(new DataItem(key, value));
-                itemsReadInChunk++;
-            }
-
-            if (currentChunk.isEmpty()) {
-                return null; // End of data
-            }
-
-            List<DataItem> validChunk = validateChunkAgainstDatabase(currentChunk);
-            validItemsQueue.addAll(validChunk);
-        }
-        return validItemsQueue.poll();
-    }
- */

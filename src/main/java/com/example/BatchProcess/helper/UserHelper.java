@@ -1,7 +1,6 @@
 package com.example.BatchProcess.helper;
 
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,11 +16,9 @@ public class UserHelper {
     private UserRepository userRepository;
 
     public List<User> validateChunkAgainstDatabase(List<User>chunk){
-
-        // validation needs to be done.
-        if(chunk.isEmpty()){
+        if(chunk.isEmpty())
             return null;
-        }
+
         List<Integer> uniqueUserIds= userRepository.validateChunkAgainstDatabaseRepo(chunk);
         
         return chunk.stream()
@@ -29,14 +26,10 @@ public class UserHelper {
                 .collect(Collectors.toList());
     }
 
-  
-
     public boolean userDataValidation(User user){
-
         if(user.equals(null) ||user.getUserAdd().isEmpty()||user.getUserContact().isEmpty()||user.getUserName().isEmpty()){
             return false;
         }else
         return true;
-
     }
 }

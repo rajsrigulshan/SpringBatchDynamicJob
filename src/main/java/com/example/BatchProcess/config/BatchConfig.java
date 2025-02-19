@@ -30,7 +30,7 @@ import com.example.BatchProcess.model.User;
 @EnableBatchProcessing
 public class BatchConfig {
     @Autowired
-    public  JobRepository jobRepository;
+    public JobRepository jobRepository;
     @Autowired
     public JobCompletionNotiImpl listener;
     @Autowired
@@ -43,63 +43,51 @@ public class BatchConfig {
     private UserHelper userHelper;
     @Value("${spring.batch.chunkSize:5}")
     private int chunkSize;
-    
-    public  Job  jobBean(){
+
+
+    //Job creation
+    public Job jobBean() {
         System.out.println("job bean creation");
-        return new  JobBuilder("job new", jobRepository)
-                    .listener(listener)
-                    .start(steps(null))
-                    .build();
+        return new JobBuilder("job new", jobRepository)
+                .listener(listener)
+                .start(steps(null))
+                .build();
     }
 
-    
-    public Step steps(List<User>users){
+    public Step steps(List<User> users) {
         return new StepBuilder("jobStep", jobRepository)
-        .<User,User>chunk(chunkSize,transactionManager)
-                .reader(userReader(users,userHelper,chunkSize))
+                .<User, User>chunk(chunkSize, transactionManager)
+                .reader(userReader(users, userHelper, chunkSize))
                 .processor(validUser)
                 .writer(itemWriter())
                 .faultTolerant()
                 .skip(DuplicateKeyException.class)
                 .skip(InvalidObjectException.class)
-                .skipLimit(1000)
+                .skipLimit(10)
                 .build();
-            }
-        
-                
-        
-            //reader 
-            // @Bean
-            public ItemReader<User> userReader(List<User> users,UserHelper userHelper,int chunkSize){      
-                System.out.println("reader is triggered....."+chunkSize);  
-                return new UserCustomReader(users,userHelper,chunkSize);
-            }
-        
-            // @Bean
-            // public ItemProcessor<User,User> itemProcessor(){
-            //     return new ValidUser();
-            // }
-            
-        
-        
-        
-            @Bean
-    public ItemWriter<User> itemWriter(){
-        return new JdbcBatchItemWriterBuilder<User>()
-        .sql("insert into users(userId,userName,userAdd,userContact) values(:userId,:userName,:userAdd,:userContact)")
-        .dataSource(dataSource)
-        .beanMapped()
-        .build();
     }
 
+    // reader
+    public ItemReader<User> userReader(List<User> users, UserHelper userHelper, int chunkSize) {
+        return new UserCustomReader(users, userHelper, chunkSize);
+    }
+
+    /* processor autowired */
+
+    //Writer
+    @Bean
+    public ItemWriter<User> itemWriter() {
+        return new JdbcBatchItemWriterBuilder<User>()
+                .sql("insert into users(userId,userName,userAdd,userContact) values(:userId,:userName,:userAdd,:userContact)")
+                .dataSource(dataSource)
+                .beanMapped()
+                .build();
+    }
 
     public JobParameters createJobParameters() {
         return new JobParametersBuilder()
                 .addString("timestamp", String.valueOf(System.currentTimeMillis()))
                 .toJobParameters();
     }
-
-
-
 
 }
