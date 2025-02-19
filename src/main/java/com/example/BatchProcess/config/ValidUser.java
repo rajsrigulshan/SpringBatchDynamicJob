@@ -33,7 +33,8 @@ public class ValidUser implements ItemProcessor<User,User>{
 
             // } 
             else{   
-                return item;
+                // just for checking.....
+                return null;
             }
         
     }

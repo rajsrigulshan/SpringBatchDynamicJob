@@ -23,6 +23,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 
+import com.example.BatchProcess.helper.UserHelper;
 import com.example.BatchProcess.model.User;
 
 @Configuration
@@ -38,7 +39,9 @@ public class BatchConfig {
     private DataSource dataSource;
     @Autowired
     private ValidUser validUser;
-    @Value("${SpringBatchChunkSize}")
+    @Autowired
+    private UserHelper userHelper;
+    @Value("${spring.batch.chunkSize:5}")
     private int chunkSize;
     
     public  Job  jobBean(){
@@ -53,32 +56,34 @@ public class BatchConfig {
     public Step steps(List<User>users){
         return new StepBuilder("jobStep", jobRepository)
         .<User,User>chunk(chunkSize,transactionManager)
-        .reader(userReader(users))
-        .processor(validUser)
-        .writer(itemWriter())
-        .faultTolerant()
-        .skip(DuplicateKeyException.class)
-        .skip(InvalidObjectException.class)
-        .skipLimit(1000)
-        .build();
-    }
-
+                .reader(userReader(users,userHelper,chunkSize))
+                .processor(validUser)
+                .writer(itemWriter())
+                .faultTolerant()
+                .skip(DuplicateKeyException.class)
+                .skip(InvalidObjectException.class)
+                .skipLimit(1000)
+                .build();
+            }
         
-
-    //reader
-    // @Bean
-    public ItemReader<User> userReader(List<User> users){      
-        System.out.println("reader is triggered.....");  
-        return new UserCustomReader(users);
-    }
-
-    // @Bean
-    // public ItemProcessor<User,User> itemProcessor(){
-    //     return new ValidUser();
-    // }
-    
-
-    @Bean
+                
+        
+            //reader 
+            // @Bean
+            public ItemReader<User> userReader(List<User> users,UserHelper userHelper,int chunkSize){      
+                System.out.println("reader is triggered....."+chunkSize);  
+                return new UserCustomReader(users,userHelper,chunkSize);
+            }
+        
+            // @Bean
+            // public ItemProcessor<User,User> itemProcessor(){
+            //     return new ValidUser();
+            // }
+            
+        
+        
+        
+            @Bean
     public ItemWriter<User> itemWriter(){
         return new JdbcBatchItemWriterBuilder<User>()
         .sql("insert into users(userId,userName,userAdd,userContact) values(:userId,:userName,:userAdd,:userContact)")

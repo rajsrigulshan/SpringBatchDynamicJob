@@ -1,7 +1,6 @@
 package com.example.BatchProcess.config;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -11,27 +10,30 @@ import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.annotation.BeforeStep;
 import org.springframework.batch.item.ItemReader;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+
 
 import com.example.BatchProcess.helper.UserHelper;
 import com.example.BatchProcess.model.User;
+
+
 
 public class UserCustomReader  implements ItemReader<User>{
 
     private Logger logger=LoggerFactory.getLogger(UserCustomReader.class);
 
     private List<User> users;
-    public UserCustomReader(List<User> users){
+    private UserHelper userHelper;
+    private int chunkSize=5;
+    public UserCustomReader(List<User> users,UserHelper userHelper,int chunkSize){
         logger.info("INFO: total number of users: {}",users.size());
         this.users=users;
+        this.userHelper=userHelper;
+        this.chunkSize=chunkSize;
     }
 
 
-    @Autowired
-    private UserHelper userHelper;
-    @Value("${SpringBatchChunkSize}")
-    private int chunkSize;
+    
+    
     int index=0;
     Queue<User> validUsersData;
 
@@ -42,6 +44,7 @@ public class UserCustomReader  implements ItemReader<User>{
 
     @Override
     public User read(){
+        System.out.println("chunkSize is --------------------"+chunkSize+"------------------");
         if(validUsersData.isEmpty()){
             List<User> currentChunk=new ArrayList<>();
             int itemReadInCurrentChunk=0;
@@ -56,9 +59,13 @@ public class UserCustomReader  implements ItemReader<User>{
 
         //validation against database  needs to be complete....
         validUsersData.addAll(userHelper.validateChunkAgainstDatabase(currentChunk));
+        for (User user : validUsersData) {
+            System.out.println(user.toString());
+        }
             
         }
         return validUsersData.poll();
+        // return null; // just to check......and not save in the database
     }    
     
 }
